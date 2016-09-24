@@ -31,9 +31,6 @@ var shortcuts = new Map([
 	['pistols', '’ ̿’\̵͇̿̿\з=(◕_◕)=ε/̵͇̿̿/’̿’̿ ̿']
 ]);
 
-var afk = -1;
-var afkmessage;
-
 selfbot.on('error', e => {
 	console.error(e);
 });
@@ -51,32 +48,15 @@ selfbot.on('ready', function() {
 });
 
 selfbot.on('message', message => {
-	if (message.content.includes('<@' + selfbot.user.id + '>')) {
-		if (afk === 1) {
-			message.reply(selfbot.user.username + ' is AFK: ' + afkmessage);
-		}
-	}
-	if (message.channel.type === 'dm') {
-		if (afk === 1) {
-			message.reply(selfbot.user.username + ' is AFK: ' + afkmessage);
-		}
-	}
 	if (message.author !== selfbot.user) return;
-	if (afk === 1) {
-		if (!message.content.includes('AFK') && !message.content.startsWith(prefix + 'afk')) {
-			message.channel.sendMessage('Welcome back ' + selfbot.user.username + '! I\'ve removed your AFK message.');
-			selfbot.user.setStatus('online', 'Online');
-			afkmessage = '';
-			afk = -1;
-		}
+	var commandName = message.content.slice(prefix.length);
+	if (shortcuts.has(commandName)) {
+		setTimeout(() => {
+			message.edit(shortcuts.get(commandName))
+		}, 10);
+		return;
 	}
 	if (!message.content.startsWith(prefix)) return;
-	if (message.content.startsWith(prefix + 'afk')) {
-		afkmessage = message.content.slice(6);
-		afk = true;
-		message.channel.sendMessage('Alright ' + selfbot.user.username + ' I\'ve set your AFK message to: `' + afkmessage + '`');
-		selfbot.user.setStatus('idle', 'AFK: ' + afkmessage);
-	}
 	if (message.content.startsWith(prefix + 'restart')) {
 		message.channel.sendMessage(':wave: ' + selfbot.user.username + '\'s Selfbot is restarting...');
 		setTimeout(function() {
@@ -95,13 +75,6 @@ selfbot.on('message', message => {
 			messages.map(m => m.delete().catch(console.error));
 		}).catch(console.error);
 		message.channel.sendMessage(selfbot.user.username + ', successfully pruned ' + params + ' of your messages!')
-	}
-	var commandName = message.content;
-	if (shortcuts.has(commandName)) {
-		setTimeout(() => {
-			message.edit(shortcuts.get(commandName))
-		}, 10);
-		return;
 	}
 	if (message.content.startsWith(prefix + 'servers')) {
 		console.log(message.author.username + ' executed: servers');
