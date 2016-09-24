@@ -1,0 +1,28 @@
+{
+  "name": "AsianSelfbot",
+  "version": "2.0.0",
+  "description": "A useful Discord selfbot",
+  "author": "Michael Cao <mike.x.cao@gmail.com>",
+  "main": "asianselfbot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node asianselfbot.js"
+  },
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/asianboiFRC/AsianSelfbot"
+},
+  "license": "MIT",
+  "bugs": {
+  "url": "https://github.com/asianboiFRC/AsianSelfbot/issues"
+},
+  "keywords": [
+  "selfbot",
+  "discord",
+  "discordbot"
+],
+  "dependencies": {
+    "supervisor": "*",
+    "discord.js": ">=9.2.0"
+  }
+}
