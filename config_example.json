@@ -1,4 +1,9 @@
 {
-	"token":"tokenhere",
-	"prefix":"prefixhere"
+	"token": "",
+	"prefix": "",
+	"tchan": "",
+	"webhookID": "",
+	"webhookTOKEN": "",
+	"rotating": true,
+	"gameList": ["list", "of", "games", "to", "loop", "through"]
 }
