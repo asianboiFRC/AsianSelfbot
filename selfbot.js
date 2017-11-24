@@ -1,36 +1,10 @@
 /*
 	ASIANBOI's Selfbot
-	September 14, 2017
+	November 24, 2017
 	Created by Michael Cao (ASIANBOI)
-
-	------------------------------------------------------------------------------------------------------------------------------
-
-	Documentation: Read through code - commented stuff needs to be changed. Install the packages util, fs, moment, request, and discord.js with the command "npm install util fs moment request discord.js".
-
-	------------------------------------------------------------------------------------------------------------------------------
-
-	Config File: Make a file called config.json and put this in it:
-
-	{
-		"token": "your_selftoken",
-		"prefix": "prefix",
-		"tchan": "channel-to-log-things-in",
-		"webhookID": "webhook-id",
-		"webhookTOKEN": "webhook-token",
-		"rotating": true,
-		"gameList": ["list", "of", "games", "to", "rotate", "through"]
-	}
-
-	------------------------------------------------------------------------------------------------------------------------------
-
-	Config documentation:
-
-	Token and prefix are self explanatory.
-	tchan is the ID of the channel you want to log data in - this should be a private channel.
-	webhookID and webhookTOKEN - the ID and token of a webhook.
-		For example, with the webhook https://canary.discordapp.com/api/webhooks/277997662102618112/zzkoJLG3xPloltokendyfGvvbkKFaiV4MSjtZ4uQlbRg8OoE the ID is 277997662102618112 and the token is zzkoJLG3xPloltokendyfGvvbkKFaiV4MSjtZ4uQlbRg8OoE
-	rotating is whether or not to rotate through the games on the gameList.
 */
+const hastebin = require('hastebin-gen');
+
 const util = require('util');
 const fs = require('fs');
 const moment = require('moment');
@@ -43,7 +17,7 @@ const Discord = require('discord.js');
 const bot = new Discord.Client({
 	fetchAllMembers: true,
 	sync: true,
-	disabledEvents: ["TYPING_START", "TYPING_STOP", "ROLE_CREATE", "ROLE_DELETE", "USER_UPDATE"]
+	disabledEvents: ["TYPING_START", "TYPING_STOP", "USER_UPDATE", "GUILD_UPDATE", "GUILD_MEMBER_ADD", "GUILD_MEMBER_REMOVE", "GUILD_MEMBER_UPDATE", "GUILD_MEMBERS_CHUNK", "GUILD_ROLE_CREATE", "GUILD_ROLE_DELETE", "GUILD_ROLE_UPDATE", "GUILD_BAN_ADD", "GUILD_BAN_REMOVE", "CHANNEL_CREATE", "CHANNEL_DELETE", "CHANNEL_UPDATE", "CHANNEL_PINS_UPDATE", "MESSAGE_DELETE_BULK", "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL", "USER_UPDATE", "USER_NOTE_UPDATE", "PRESENCE_UPDATE", "VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE", "RELATIONSHIP_ADD", "RELATIONSHIP_REMOVE"]
 });
 
 const config = require('./config.json');
@@ -87,11 +61,11 @@ bot.on('disconnect', function() {
 bot.on('ready', function() {
 	webhook("Selfbot", "Success", `${bot.user.username}'s Selfbot is online and ready!`, "#04ff00");
 	console.log(`${bot.user.username}'s bot Online and Ready! On ${bot.guilds.size} servers!`);
-	bot.user.setStatus('dnd');
+	bot.user.setStatus('invisible');
 	if (rotating = true) {
-		setGame();
+		bot.user.setGame(games[Math.floor(Math.random(5) * (games.length + 1))])
 		setInterval(() => {
-			setGame();
+			bot.user.setGame(games[Math.floor(Math.random(5) * (games.length + 1))])
 		}, 300000)
 	} else {
 		fs.readFile('game.txt', function(err, data) {
@@ -105,12 +79,11 @@ bot.on('ready', function() {
 bot.on('message', msg => {
 	if (msg.channel.type == 'text') {
 		//Adjust this to your own needs
-		if (msg.content.toLowerCase().includes('asianboi') || msg.content.toLowerCase().includes('asian') || msg.isMentioned(bot.user))
+		if (!msg.author.bot && !msg.author == bot.user && msg.content.toLowerCase().includes('asianboi') || msg.content.toLowerCase().includes('asian') || msg.isMemberMentioned(bot.user))
 			webhook("Selfbot", "USER MENTION", `Just mentioned by ${msg.author.username} (${msg.author.id}) on ${msg.guild.name}/${msg.channel.name}:\n**${msg.cleanContent}**`, "#00fffa");
 
 		const none2fa = /\w{24}\.\w{6}\.[\w\d-_]{27}/g;
 		const full2fa = /((?:mfa.[\w-]+))/g;
-		const invitelink = /(https:\/\/)?discord.gg\/...+/g;
 	}
 
 	if (msg.author !== bot.user) return;
@@ -381,7 +354,9 @@ bot.on('message', msg => {
 				.setFooter(`${bot.user.username}'s Selfbot`, `${bot.user.avatarURL}`)
 				.setTimestamp()
 				.addField('Note', note);
-			bot.channels.get("290298049941602304").sendEmbed(embednote);
+			bot.channels.get("364172935700807683").send({
+				embed: embednote
+			});
 
 			msg.edit("Note successfully taken!");
 		}
@@ -390,10 +365,11 @@ bot.on('message', msg => {
 			var code = msg.content.split(" ").splice(1).join(" ");
 			var embed = new Discord.RichEmbed();
 			try {
+				msg.delete();
 				let evaled = eval(code);
 				let type = typeof evaled;
 				let insp = util.inspect(evaled, {
-					depth: 0
+					depth: 2
 				});
 
 				if (evaled === null) evaled = 'null';
@@ -404,16 +380,57 @@ bot.on('message', msg => {
 					.setFooter(`${bot.user.username}'s Selfbot`, `${bot.user.avatarURL}`)
 					.setTimestamp()
 					.addField('Code', "```js\n" + clean(code) + "```")
-					.addField('Result', "```js\n" + clean(evaled.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED')) + "```");
-				if (evaled instanceof Object) {
-					embed.addField('Inspect', "```js\n" + insp.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED') + "```");
+
+				toStr = clean(evaled.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED'));
+				if (toStr.length > 1000) {
+					hastebin(toStr, "js").then(r => {
+						embed.addField('Result', "Result too large. Posted to " + r);
+						if (evaled instanceof Object) {
+							insp = insp.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED')
+							if (insp.length > 1000) {
+								hastebin(insp, "js").then(r => {
+									embed.addField('Inspect', "Inspect too large. Posted to " + r);
+									msg.channel.send({
+										"embed": embed
+									})
+								})
+							} else {
+								embed.addField('Inspect', "```js\n" + insp + "```");
+								msg.channel.send({
+									"embed": embed
+								})
+							}
+						} else {
+							embed.addField('Type', "```js\n" + type + "```");
+							msg.channel.send({
+								"embed": embed
+							})
+						}
+					})
 				} else {
-					embed.addField('Type', "```js\n" + type + "```");
+					embed.addField('Result', "```js\n" + toStr + "```")
+					if (evaled instanceof Object) {
+						insp = insp.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED')
+						if (insp.length > 1000) {
+							hastebin(insp, "js").then(r => {
+								embed.addField('Inspect', "Inspect too large. Posted to " + r);
+								msg.channel.send({
+									"embed": embed
+								})
+							})
+						} else {
+							embed.addField('Inspect', "```js\n" + insp + "```");
+							msg.channel.send({
+								"embed": embed
+							})
+						}
+					} else {
+						embed.addField('Type', "```js\n" + type + "```");
+						msg.channel.send({
+							"embed": embed
+						})
+					}
 				}
-				msg.delete();
-				msg.channel.send({
-					"embed": embed
-				})
 			} catch (err) {
 				embed.setColor(0xFF0000)
 					.setAuthor(`${bot.user.username}`, `${bot.user.avatarURL}`)
@@ -421,35 +438,74 @@ bot.on('message', msg => {
 					.setFooter(`${bot.user.username}'s Selfbot`, `${bot.user.avatarURL}`)
 					.setTimestamp()
 					.addField('Code', "```js\n" + clean(code) + "```")
-					.addField('Error', "```LDIF\n" + clean(err.message) + "```");
-				msg.delete();
-				msg.channel.send({
+				var err = clean(err.message)
+				if (err.length > 1000) {
+					hastebin(err, "txt").then(r => {
+						embed.addField('Error', "Error too large. Posted to " + r);
+						msg.channel.send({
+							"embed": embed
+						})
+					})
+				} else {
+					embed.addField('Error', "```LDIF\n" + err + "```");
+					msg.channel.send({
 						"embed": embed
 					})
-					.catch(error => console.log(error.stack));
+				}
 			}
 		}
 
 		if (command == 'teval') {
 			var code = msg.content.split(" ").splice(1).join(" ");
-			var txt = "";
+			var txt = 'Code ```js\n' + clean(code) + '```';
 			msg.delete();
 			try {
 				let evaled = eval(code);
 				let type = typeof evaled;
 				let insp = util.inspect(evaled, {
-					depth: 0
+					depth: 2
 				});
 				if (evaled === null) evaled = 'null';
 
-				txt += 'Code ```js\n' + clean(code) + '```'
-				txt += '\nResult ```js\n' + clean(evaled.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED')) + "```";
-				if (evaled instanceof Object) {
-					txt += '\nInspect ```js\n' + insp.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED') + '```';
+				toStr = clean(evaled.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED'));
+				if (toStr.length > 1000) {
+					hastebin(toStr, "js").then(r => {
+						txt += '\nResult: Result too large. Posted to ' + r
+
+						insp = insp.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED')
+						if (insp.toString().length > 2000) {
+							hastebin(insp, "js").then(r => {
+								insp = "Inspect too large. Posted to " + r
+							})
+						} else {
+							insp = "```js\n" + insp + "```"
+						}
+						msg.channel.send(txt)
+					})
 				} else {
-					txt += '\nType ```js\n' + type + '```';
+					txt += "\nResult: ```js\n" + toStr + "```"
+
+					insp = insp.toString().replace(bot.token, 'REDACTED').replace(bot.user.email, 'REDACTED')
+					if (insp.toString().length > 1000) {
+						hastebin(insp, "js").then(r => {
+							insp = "Inspect too large. Posted to " + r
+							if (evaled instanceof Object) {
+								txt += '\nInspect: ' + insp;
+							} else {
+								txt += '\nType ```js\n' + type + '```';
+							}
+							msg.channel.send(txt)
+						})
+					} else {
+						insp = "```js\n" + insp + "```"
+						if (evaled instanceof Object) {
+							txt += '\nInspect: ' + insp;
+						} else {
+							txt += '\nType ```js\n' + type + '```';
+						}
+						msg.channel.send(txt)
+					}
 				}
-				msg.channel.send(txt)
 			} catch (err) {
 				txt += 'Code ```js\n' + clean(code) + '```\n'
 				txt += 'Error ```LDIF\n' + clean(err.message) + '```';
@@ -556,21 +612,28 @@ bot.on('message', msg => {
 
 		if (command == "gold") {
 			msg.delete()
-			msg.channel.send("**<:gold:288828853818753024> Discord Gold is required to view this message. Buy it today at https://discord.gold/**")
+			msg.channel.send("**<:gold:288828853818753024> Discord Gold is required to view this message. Buy it today at https://discord.gold/ **")
+		}
+
+		if (command == "partner") {
+			msg.delete()
+			msg.channel.send("**<:partner:314068430556758017> Discord Partnership is required to view this message. Learn more at https://discordapp.com/partners **")
+		}
+
+		if (command == "partnerembed") {
+			msg.delete()
+			var e = new Discord.RichEmbed()
+				.setAuthor(bot.user.username, bot.user.avatarURL)
+				.setThumbnail('https://content.recklessnetwork.com/monthly_2017_02/discordpartnerbadge_dark.png.b928a6400d1c86734f6e43e93cb87bde.png')
+				.setTitle("Discord Partnership is required to view this message.")
+				.setDescription("Learn more at https://discordapp.com/partners");
+			msg.channel.send(e)
 		}
 	} catch (err) {
 		msg.edit(`There was an error executing the command ${command}.\n` + err);
 		webhook("Selfbot", "Error", "OH NO we encountered an error!\n" + err, "#ff0000");
 	}
 });
-
-function setGame() {
-	if (i == games.length)
-		i = 0;
-	console.log(games[i]);
-	bot.user.setGame(games[i]);
-	i++;
-}
 
 function clean(text) {
 	if (typeof(text) === 'string')
@@ -594,7 +657,7 @@ function webhook(name, header, text, color) {
 			}]
 		}
 		request({
-			url: endpoint + "webhooks/" + config.webhookID + "/" + config.webhookTOKEN + "/slack",
+			url: "https://discordapp.com/api/webhooks/" + config.webhookID + "/" + config.webhookTOKEN + "/slack",
 			method: "POST",
 			body: d,
 			json: true
