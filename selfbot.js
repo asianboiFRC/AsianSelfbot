@@ -1,6 +1,6 @@
 /*
 	ASIANBOI's Selfbot
-	November 24, 2017
+	November 26, 2017
 	Created by Michael Cao (ASIANBOI)
 */
 const hastebin = require('hastebin-gen');
@@ -65,8 +65,8 @@ bot.on('disconnect', function() {
 bot.on('ready', function() {
 	webhook("Selfbot", "Success", `${bot.user.username}'s Selfbot is online and ready!`, "#04ff00");
 	console.log(`${bot.user.username}'s bot Online and Ready! On ${bot.guilds.size} servers!`);
-	bot.user.setStatus('invisible');
-	if (rotating = true) {
+	bot.user.setStatus('dnd');
+	/*if (rotating = true) {
 		bot.user.setGame(games[Math.floor(Math.random(5) * (games.length + 1))])
 		setInterval(() => {
 			bot.user.setGame(games[Math.floor(Math.random(5) * (games.length + 1))])
@@ -77,7 +77,7 @@ bot.on('ready', function() {
 			console.log(data);
 			bot.user.setGame(data);
 		});
-	}
+	}*/
 });
 
 bot.on('message', msg => {
