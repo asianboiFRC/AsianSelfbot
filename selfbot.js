@@ -15,7 +15,6 @@ var request = require('request')
 
 const Discord = require('discord.js');
 const bot = new Discord.Client({
-	fetchAllMembers: true,
 	sync: true,
 	disabledEvents: ["TYPING_START", "TYPING_STOP", "USER_UPDATE", "GUILD_ROLE_CREATE", "GUILD_ROLE_DELETE", "GUILD_ROLE_UPDATE", "GUILD_BAN_ADD", "GUILD_BAN_REMOVE", "CHANNEL_DELETE", "CHANNEL_UPDATE", "CHANNEL_PINS_UPDATE", "MESSAGE_DELETE_BULK", "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL", "VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE"]
 });
